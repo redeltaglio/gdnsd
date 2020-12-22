@@ -1635,13 +1635,13 @@ static ltree_dname_status_t search_ltree_for_dname(const uint8_t* dname, search_
     const ltree_node_t* auth = NULL;
     unsigned depth_lc = lcount;
     while (!rv_node && current) {
-        if (LTN_GET_FLAG_ZCUT(current) && auth) {
+        if (auth && current->zone_cut) {
             gdnsd_assert(rval == DNAME_AUTH);
             rval = DNAME_DELEG;
             depth_lc = lcount;
             rv_node = current;
         } else {
-            if (LTN_GET_FLAG_ZCUT(current)) {
+            if (current->zone_cut) {
                 gdnsd_assert(rval == DNAME_NOAUTH);
                 gdnsd_assert(!auth);
                 rval = DNAME_AUTH;
