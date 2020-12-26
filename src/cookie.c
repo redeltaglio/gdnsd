@@ -252,7 +252,7 @@ void cookie_config(const char* key_file)
 
     if (key_file) {
         if (safe_read_keyfile(key_file, master_key))
-            log_fatal("Cannot read %zu bytes from '%s': %s", (size_t)KDF_KEYBYTES, key_file, logf_errno());
+            log_fatal("Cannot read %u bytes from '%s': %s", (unsigned)KDF_KEYBYTES, key_file, logf_errno());
     } else {
         char* autokey_path = gdnsd_resolve_path_run(base_autokey, NULL);
         if (safe_read_keyfile(autokey_path, master_key)) {
@@ -285,7 +285,7 @@ void cookie_runtime_init(struct ev_loop* loop)
     ev_periodic_start(loop, hourly_p);
 }
 
-bool cookie_process(uint8_t* cookie_data_out, const uint8_t* cookie_data_in, const gdnsd_anysin_t* client, const size_t cookie_data_in_len)
+bool cookie_process(uint8_t* cookie_data_out, const uint8_t* cookie_data_in, const gdnsd_anysin_t* client, const unsigned cookie_data_in_len)
 {
     // Assert that cookie_config() and cookie_runtime_init() were called to define the keys
     gdnsd_assert(master_key);

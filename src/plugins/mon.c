@@ -83,7 +83,7 @@ static smgr_t* smgrs = NULL;
 static gdnsd_sttl_t* smgr_sttl = NULL;
 gdnsd_sttl_t* smgr_sttl_consumer_ = NULL;
 
-static size_t max_states_len = 0;
+static unsigned max_states_len = 0;
 
 static bool initial_round = false;
 static bool testsuite_nodelay = false;
@@ -906,7 +906,7 @@ static void get_state_texts(const unsigned i, const char** cur_state_out, const 
                       [!!(smgrs[i].real_sttl & GDNSD_STTL_DOWN)];
 }
 
-char* gdnsd_mon_states_get_json(size_t* len)
+char* gdnsd_mon_states_get_json(unsigned* len)
 {
     gdnsd_assert(max_states_len);
 
@@ -925,17 +925,17 @@ char* gdnsd_mon_states_get_json(size_t* len)
         const char* cur_st;
         const char* real_st;
         get_state_texts(i, &cur_st, &real_st);
-        const size_t avail = (size_t)(max_states_len - (size_t)(buf - buf_start));
+        const unsigned avail = (unsigned)(max_states_len - (unsigned)(buf - buf_start));
         const int snp_rv = snprintf(buf, avail, json_tmpl, smgrs[i].desc, cur_st, real_st);
-        gdnsd_assert(snp_rv > 0 && (size_t)snp_rv < avail);
-        buf += (size_t)snp_rv;
+        gdnsd_assert(snp_rv > 0 && (unsigned)snp_rv < avail);
+        buf += (unsigned)snp_rv;
     }
 
     memcpy(buf, json_foot, json_foot_len);
     buf += json_foot_len;
 
     gdnsd_assert(buf > buf_start);
-    const size_t written = (size_t)(buf - buf_start);
+    const unsigned written = (unsigned)(buf - buf_start);
     gdnsd_assert(written < max_states_len);
 
     *len = written;
