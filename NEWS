@@ -1,3 +1,6 @@
+3.99.x
+    * Prototype work for future 4.x releases - not production quality!
+
 3.5.1 - 2021-02-10
     * [Fixes marked with [BP] are also backported to 3.[234].x branches for
       convenience, but new releases from those branches are not imminent]
