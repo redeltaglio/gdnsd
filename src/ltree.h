@@ -333,7 +333,11 @@ void realize_rdata(const ltree_node_t* node, ltree_rrset_raw_t* raw);
         }\
     } while (0);
 
-// ltree_root is RCU-managed and accessed by reader threads, defined in ltree.c
-extern ltree_node_t* root_tree;
+// lroot is RCU-managed and accessed by reader threads, defined in ltree.c
+typedef struct {
+    ltree_node_t* root;
+    uint64_t gen; // bumps on every zreload
+} ltree_root_t;
+extern ltree_root_t* lroot;
 
 #endif // GDNSD_LTREE_H
