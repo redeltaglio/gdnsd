@@ -9,15 +9,17 @@ AM_SILENT_RULES([yes])
 AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
 m4_version_prereq([2.70], [], [AC_PROG_CC_STDC])
-AC_MSG_CHECKING([For C11 support in the C compiler])
+AC_MSG_CHECKING([For C11 and stdatomic.h support in the C compiler])
 AC_COMPILE_IFELSE(
     [AC_LANG_PROGRAM([[
         #include <assert.h>
+        #include <stdatomic.h>
         static_assert(__STDC_VERSION__ >= 201112L, "C11");
+        atomic_flag flag = ATOMIC_FLAG_INIT;
     ]],[])],
     [AC_MSG_RESULT([yes])],
     [AC_MSG_RESULT([no])
-     AC_MSG_ERROR([C11 Compiler is required])]
+     AC_MSG_ERROR([C11 Compiler with stdatomic.h support is required])]
 )
 
 # POSIX threads stuff
