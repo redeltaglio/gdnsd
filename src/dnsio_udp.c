@@ -44,6 +44,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <signal.h>
+#include <stdatomic.h>
 
 #include <urcu-qsbr.h>
 
@@ -102,11 +103,11 @@ static bool use_mmsg = false;
 // signals sent by outsiders:
 static pid_t mainpid = 0;
 
-static _Thread_local volatile sig_atomic_t thread_shutdown = 0;
+static _Thread_local atomic_flag keep_running = ATOMIC_FLAG_INIT;
 static void sighand_stop(int s V_UNUSED, siginfo_t* info, void* ucontext V_UNUSED)
 {
     if (!info || info->si_pid == mainpid)
-        thread_shutdown = 1;
+        atomic_flag_clear_explicit(&keep_running, memory_order_relaxed);
 }
 
 void dnsio_udp_init(const pid_t main_pid)
@@ -353,7 +354,7 @@ static void mainloop(const int fd, dnsp_ctx_t* pctx, dnspacket_stats_t* stats, c
         log_fatal("Failed to set SO_RCVTIMEO on UDP socket: %s", logf_errno());
     bool is_online = true;
 
-    while (likely(!thread_shutdown)) {
+    while (likely(atomic_flag_test_and_set_explicit(&keep_running, memory_order_relaxed))) {
         iov.iov_len = DNS_RECV_SIZE;
         msg_hdr.msg_namelen    = GDNSD_ANYSIN_MAXLEN;
         msg_hdr.msg_flags      = 0;
@@ -502,7 +503,7 @@ static void mainloop_mmsg(const int fd, dnsp_ctx_t* pctx, dnspacket_stats_t* sta
         log_fatal("Failed to set SO_RCVTIMEO on UDP socket: %s", logf_errno());
     bool is_online = true;
 
-    while (likely(!thread_shutdown)) {
+    while (likely(atomic_flag_test_and_set_explicit(&keep_running, memory_order_relaxed))) {
         // Re-set values changed by previous syscalls
         for (unsigned i = 0; i < MMSG_WIDTH; i++) {
             dgrams[i].msg_hdr.msg_iov[0].iov_len = DNS_RECV_SIZE;
@@ -556,6 +557,14 @@ static bool is_ipv6(const gdnsd_anysin_t* sa)
 void* dnsio_udp_start(void* thread_asvoid)
 {
     gdnsd_thread_setname("gdnsd-io-udp");
+
+    // This sets keep_running=true for the first time.  It's a TLS variable and
+    // ATOMIC_FLAG_INIT is only defined to set false, so we have to do this
+    // here after the thread starts.  There's no race with an early USR2
+    // delivery because main can't try to shut us down cleanly until it
+    // finishes starting up, which in turn blocks on the dnspacket context init
+    // below in dnspacket_ctx_init_udp().
+    atomic_flag_test_and_set_explicit(&keep_running, memory_order_relaxed);
 
     const dns_thread_t* t = thread_asvoid;
     gdnsd_assert(t->is_udp);
